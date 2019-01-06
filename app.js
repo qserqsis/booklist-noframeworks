@@ -66,13 +66,11 @@ class Store {
     };
   
     getBooks() {
-        let books;
         if (localStorage.getItem(this.storage) === null){
-            books = [];
+            return [];
         } else {
-            books = JSON.parse(localStorage.getItem(this.storage));
+            return JSON.parse(localStorage.getItem(this.storage));
         }
-        return books;
     }
     
     addBook(book) {
