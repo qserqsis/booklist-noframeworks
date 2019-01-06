@@ -6,34 +6,33 @@ class Book {
         this.isbn = isbn;
     }
 }
+//Alerts
+function showAlerts(message, className) {
+    const div = document.createElement('div');
+    div.className = `alert alert-${className}`;
+    div.appendChild(document.createTextNode(message));
+    const container = document.querySelector('.container');
+    const form = document.querySelector('#book-form');
+    container.insertBefore(div,form);
+    //Vanish in 3 seconds
+    setTimeout(() => {
+        document.querySelector('.alert').remove();
+    }, 3000);
+}
+
 //UI Class: Handle UI Tasks
 class UI {
-    static displayBooks() {
-        /* const StoredBooks = [
-            {
-                title: 'Тайные виды на гору Фудзи',
-                author: 'Виктор Пелевин',
-                isbn: '978-5-04-098435-0'
-            },
-            {
-                title: 'КайноЗой',
-                author: 'Сергей Лукьяненко',
-                isbn: '978-5-17-112584-4'
-            },
-            {
-                title: 'Происхождение',
-                author: 'Дэн Браун',
-                isbn: '978-5-17-106150-0'
-            }
-        ]; */
+    constructor(books) {
+        this.books = books;
+    }
 
-        const books = Store.getBooks();
-        if (books){
-            books.forEach((book) => UI.addBookToList(book));
+    displayBooks() {
+        if (this.books){
+            this.books.forEach((book) => this.addBookToList(book));
         }
     }
 
-    static addBookToList(book) {
+    addBookToList(book) {
         const list = document.querySelector('#book-list');
 
         const row = document.createElement('tr');
@@ -47,73 +46,65 @@ class UI {
         list.appendChild(row);
     }
 
-    static deleteBook(element) {
+    deleteBook(element) {
         if (element.classList.contains('delete')) {
             element.parentElement.parentElement.remove();
         }
     }
 
-    static clearFields() {
+    clearFields() {
         var inputs = document.querySelector('#book-form').getElementsByTagName('input');
         for (var i=0;i<inputs.length;i++){
             if (inputs[i].type.toLowerCase() === 'text') inputs[i].value = '';
             };
         }
-
-    static showAlerts(message, className){
-        const div = document.createElement('div');
-        div.className = `alert alert-${className}`;
-        div.appendChild(document.createTextNode(message));
-        const container = document.querySelector('.container');
-        const form = document.querySelector('#book-form');
-        container.insertBefore(div,form);
-        //Vanish in 3 seconds
-        setTimeout(() => {
-            document.querySelector('.alert').remove();
-        }, 3000);
-    }
-}
+};
 //Store Class: Handles Storage
 class Store {
-    static getBooks() {
+    constructor (storage) {
+        this.storage = storage;
+    };
+  
+    getBooks() {
         let books;
-        if (localStorage.getItem('myLibrary') === null){
+        if (localStorage.getItem(this.storage) === null){
             books = [];
         } else {
-            books = JSON.parse(localStorage.getItem('myLibrary'));
+            books = JSON.parse(localStorage.getItem(this.storage));
         }
         return books;
     }
     
-    static addBook(book) {
-        const books = Store.getBooks();
+    addBook(book) {
+        const books = this.getBooks();
         books.push(book);
         try {
-            localStorage.setItem('myLibrary', JSON.stringify(books));
+            localStorage.setItem(this.storage, JSON.stringify(books));
         } catch (error) {
             if (error == QUOTA_EXCEEDED_ERR) {
-                UI.showAlerts('Not enough spase to add book', 'danger')
+                showAlerts('Not enough spase to add book', 'danger')
             } else {
-                UI.showAlerts('Unexpected error', 'danger')
+                showAlerts('Unexpected error', 'danger')
             }
             
         }
     }
     
-    static removeBook(isbn) {
-        const books = Store.getBooks();
+    removeBook(isbn) {
+        const books = this.getBooks();
         books.forEach((book,index) => {
             if (book.isbn === isbn) {
                 books.splice(index, 1);
             }
             
         })
-
-        localStorage.setItem('myLibrary', JSON.stringify(books))
+        localStorage.setItem(this.storage, JSON.stringify(books))
     }
 
 }
-document.addEventListener('DOMContentLoaded', UI.displayBooks)
+var store = new Store ('myLibrary');
+var ui = new UI(store.getBooks());
+document.addEventListener('DOMContentLoaded',  e => ui.displayBooks(e));
 
 // Event: Add a Book
 document.querySelector('#book-form').addEventListener('submit', (e) => {
@@ -127,23 +118,23 @@ document.querySelector('#book-form').addEventListener('submit', (e) => {
 
     //Validate
     if (title === '' || author === '' || isbn === '') {
-        UI.showAlerts('Please fill in all fields','danger');
+        showAlerts('Please fill in all fields','danger');
     }
     else {
         //Instansiate Book
         const book = new Book(title,author,isbn);
 
         //Add Book to UI
-        UI.addBookToList(book);
+        ui.addBookToList(book);
 
         //Add Book to store
-        Store.addBook(book);
+        store.addBook(book);
 
         //Show success message
-        UI.showAlerts('Book successfully added','success');
+        showAlerts('Book successfully added','success');
         
         //Clear fields
-        UI.clearFields();
+        ui.clearFields();
 
 
     }
@@ -153,10 +144,10 @@ document.querySelector('#book-form').addEventListener('submit', (e) => {
 document.querySelector('#book-list').addEventListener('click', (e) => {
     
     //Remove Book from UI
-    UI.deleteBook(e.target);
+    ui.deleteBook(e.target);
     
     //Remove Book from the Store
-    Store.removeBook(e.target.parentElement.previousElementSibling.textContent);
+    store.removeBook(e.target.parentElement.previousElementSibling.textContent);
 
-    UI.showAlerts('Book successfully deleted','warning');
+    showAlerts('Book successfully deleted','warning');
 })
